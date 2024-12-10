@@ -7,10 +7,24 @@ import cv2
 import os
 import time
 import numpy as np
+import re
 
 # 创建保存图像的文件夹
-color_output_folder = 'images'
+color_output_folder = 'images\images'
 os.makedirs(color_output_folder, exist_ok=True)
+
+# 获取当前文件夹中已有图片的最大序号
+existing_images = [f for f in os.listdir(color_output_folder) if f.lower().endswith('.png')]
+max_number = 0
+pattern = re.compile(r'^(\d+)\.png$')
+for img_name in existing_images:
+    match = pattern.match(img_name)
+    if match:
+        number = int(match.group(1))
+        if number > max_number:
+            max_number = number
+start_index = max_number  # 下一个图片序号从max_number开始+1
+
 
 # 相机配置
 pipeline = rs.pipeline()
@@ -38,25 +52,22 @@ while True:
     color_image = np.asanyarray(color_frame.get_data())
 
     # 生成文件名
-    frame_number = frame_count + 1
+    frame_number = start_index + frame_count + 1
     filename = f'{frame_number:04d}.png'
     color_file_path = os.path.join(color_output_folder, filename)
 
     cv2.imshow('Color Image', color_image)
-    c = cv2.waitKey(1)
 
+    c = cv2.waitKey(1) & 0xFF
 
-    # 保存颜色图像和深度图像
     if c == ord('s'):
-
         cv2.imwrite(color_file_path, color_image)
         frame_count += 1
         print(f'frame_count:{frame_count}')
 
-
-    # 按下 'q' 键退出循环
-    if cv2.waitKey(1) == ord('q'):
+    elif c == ord('q'):
         break
+
 
 # 关闭窗口并停止相机
 cv2.destroyAllWindows()
